@@ -1,6 +1,6 @@
 # campaigns-vk
 
-Get campaigns statisics from VK
+Get campaign statistics from VK
 
 ```sh
 # install dependecies
