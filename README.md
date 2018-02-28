@@ -3,7 +3,7 @@
 Get campaign statistics from VK
 
 ```sh
-# install dependecies
+# install dependencies
 npm install
 
 # get statistcs
