@@ -1,7 +1,10 @@
 const fs = require('fs');
 const got = require('got');
+const tunnel = require('tunnel');
 const storage = require('./lib/storage');
 
+const proxy_host = process.env.PROXY_HOST;
+const proxy_port = process.env.PROXY_PORT || 80;
 const access_token = process.env.VK_ACCESS_TOKEN;
 const account_id = process.env.VK_ACCOUNT_ID;
 const date_from = process.env.DATE_FROM;
@@ -11,17 +14,41 @@ const site_source = process.env.SITE_SOURCE || '';
 const site_domain = process.env.SITE_DOMAIN || '';
 
 const vkUrlAPI = 'https://api.vk.com/method/ads';
+const vkOpts = {json: true};
 
-got(`${vkUrlAPI}.getClients?access_token=${access_token}&account_id=${account_id}`, {json: true})
+if (proxy_host) {
+    vkOpts.agent = tunnel.httpsOverHttp({
+        proxy: {
+            host: proxy_host,
+            port: proxy_port
+        }
+    })
+}
+
+got(`${vkUrlAPI}.getClients?v=5.71&access_token=${access_token}&account_id=${account_id}`, vkOpts)
     .then((response) => {
+        if (response.body.error) {
+            console.log('getClients', response.body.error);
+            process.exit(1);
+        }
         return response.body.response[0].id;
-    }, (err) => console.error('getClients', err))
+    }, (err) => {
+        console.error('getClients', err);
+        process.exit(1);
+    })
     .then((client_id) => {
-        return got(`${vkUrlAPI}.getCampaigns?access_token=${access_token}&account_id=${account_id}&client_id=${client_id}&include_deleted=0&campaign_ids=null`, {json: true});
+        return got(`${vkUrlAPI}.getCampaigns?v=5.71&access_token=${access_token}&account_id=${account_id}&client_id=${client_id}&include_deleted=0&campaign_ids=null`, vkOpts);
     })
     .then((response) => {
+        if (response.body.error) {
+            console.log('getCampaigns', response.body.error);
+            process.exit(1);
+        }
         return response.body.response;
-    }, (err) => console.error('getCampaigns', err))
+    }, (err) => {
+        console.error('getCampaigns', err);
+        process.exit(1);
+    })
     .then((campaigns) => {
         const ids = campaigns.map((item) => item.id).join(',')
 
@@ -34,12 +61,17 @@ got(`${vkUrlAPI}.getClients?access_token=${access_token}&account_id=${account_id
         }
 
         return Promise.all([
-            got(`${vkUrlAPI}.getStatistics?access_token=${access_token}&account_id=${account_id}&ids_type=campaign&ids=${ids}&period=day&date_from=${date_from}&date_to=${date_to}`, {json: true}),
+            got(`${vkUrlAPI}.getStatistics?v=5.71&access_token=${access_token}&account_id=${account_id}&ids_type=campaign&ids=${ids}&period=day&date_from=${date_from}&date_to=${date_to}`, vkOpts),
             Promise.resolve(campaignNames)
         ]);
     })
     .then(([response, campaignNames]) => {
         let data = [];
+
+        if (response.body.error) {
+            console.log('getStatistics', response.body.error);
+            process.exit(1);
+        }
 
         for (let campaign of response.body.response) {
             for (let statistic of campaign.stats) {
@@ -62,7 +94,10 @@ got(`${vkUrlAPI}.getClients?access_token=${access_token}&account_id=${account_id
         };
 
         return Promise.resolve(data);
-    }, (err) => console.error('getStatistics', err))
+    }, (err) => {
+        console.error('getStatistics', err);
+        process.exit(1);
+    })
     .then((data) => {
         storage.save(`vk-${date_to}.csv`, data, [
             'dt_sys_partition',
