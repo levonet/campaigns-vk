@@ -1,10 +1,9 @@
 const fs = require('fs');
 const got = require('got');
-const tunnel = require('tunnel');
+const agent = require('https-proxy-agent');
 const storage = require('./lib/storage');
 
-const proxy_host = process.env.PROXY_HOST;
-const proxy_port = process.env.PROXY_PORT || 80;
+const proxy_server = process.env.PROXY_SERVER;
 const access_token = process.env.VK_ACCESS_TOKEN;
 const account_id = process.env.VK_ACCOUNT_ID;
 const date_from = process.env.DATE_FROM;
@@ -16,13 +15,8 @@ const site_domain = process.env.SITE_DOMAIN || '';
 const vkUrlAPI = 'https://api.vk.com/method/ads';
 const vkOpts = {json: true};
 
-if (proxy_host) {
-    vkOpts.agent = tunnel.httpsOverHttp({
-        proxy: {
-            host: proxy_host,
-            port: proxy_port
-        }
-    })
+if (proxy_server) {
+    vkOpts.agent = new agent(proxy_server)
 }
 
 got(`${vkUrlAPI}.getClients?v=5.71&access_token=${access_token}&account_id=${account_id}`, vkOpts)

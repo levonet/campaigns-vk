@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "got": "^8.1.0",
-    "json2csv": "^3.11.5",
-    "tunnel": "0.0.5"
+    "https-proxy-agent": "^2.1.1",
+    "json2csv": "^3.11.5"
   }
 }
