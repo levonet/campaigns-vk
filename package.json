@@ -10,7 +10,6 @@
   "license": "MIT",
   "dependencies": {
     "got": "^8.1.0",
-    "https-proxy-agent": "^2.1.1",
-    "json2csv": "^3.11.5"
+    "https-proxy-agent": "^2.1.1"
   }
 }

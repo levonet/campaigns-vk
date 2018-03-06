@@ -11,6 +11,7 @@ const date_to = process.env.DATE_TO;
 const site_medium = process.env.SITE_MEDIUM || '';
 const site_source = process.env.SITE_SOURCE || '';
 const site_domain = process.env.SITE_DOMAIN || '';
+const table_name = process.env.TABLE_NAME || '';
 
 const vkUrlAPI = 'https://api.vk.com/method/ads';
 const vkOpts = {json: true};
@@ -69,21 +70,20 @@ got(`${vkUrlAPI}.getClients?v=5.71&access_token=${access_token}&account_id=${acc
 
         for (let campaign of response.body.response) {
             for (let statistic of campaign.stats) {
-                data.push({
-                    dt_sys_partition: statistic.day,
-                    campaign: 'vkontakte',
-                    campaign_id: campaign.id,
-                    campaign_name: campaignNames[campaign.id].name,
-                    campaign_type: campaignNames[campaign.id].type,
-                    medium: site_medium,
-                    source: site_source,
-                    domain: site_domain,
-                    impressions: statistic.impressions,
-                    clicks: statistic.clicks || 0,
-                    cost: parseFloat(statistic.spent) || 0,
-                    reach: statistic.reach
-                });
-
+                data.push([
+                    '\'' + statistic.day + '\'',
+                    '\'' + 'vkontakte' + '\'',
+                    campaign.id,
+                    '\'' + campaignNames[campaign.id].name + '\'',
+                    '\'' + campaignNames[campaign.id].type + '\'',
+                    '\'' + site_medium + '\'',
+                    '\'' + site_source + '\'',
+                    '\'' + site_domain + '\'',
+                    statistic.impressions,
+                    statistic.clicks || 0,
+                    parseFloat(statistic.spent) || 0,
+                    statistic.reach
+                ]);
             };
         };
 
@@ -93,15 +93,15 @@ got(`${vkUrlAPI}.getClients?v=5.71&access_token=${access_token}&account_id=${acc
         process.exit(1);
     })
     .then((data) => {
-        storage.save(`vk-${date_to}.csv`, data, [
+        storage.save(`vk-${date_to}.sql`, table_name, data, [
             'dt_sys_partition',
             'campaign',
             'campaign_id',
             'campaign_name',
             'campaign_type',
             'medium',
-            'source',
-            'domain',
+            '"source"',
+            '"domain"',
             'impressions',
             'clicks',
             'cost',
