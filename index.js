@@ -14,34 +14,35 @@ const site_domain = process.env.SITE_DOMAIN || '';
 const table_name = process.env.TABLE_NAME || '';
 
 const vkUrlAPI = 'https://api.vk.com/method/ads';
+const vkVerAPI = '5.71';
 const vkOpts = {json: true};
 
 if (proxy_server) {
     vkOpts.agent = new agent(proxy_server)
 }
 
-got(`${vkUrlAPI}.getClients?v=5.71&access_token=${access_token}&account_id=${account_id}`, vkOpts)
+got(`${vkUrlAPI}.getClients?v=${vkVerAPI}&access_token=${access_token}&account_id=${account_id}`, vkOpts)
     .then((response) => {
         if (response.body.error) {
-            console.log('getClients', response.body.error);
+            log.error(new Error(response.body.error), 'getClients');
             process.exit(1);
         }
         return response.body.response[0].id;
     }, (err) => {
-        console.error('getClients', err);
+        log.error(new Error(err), 'getClients');
         process.exit(1);
     })
     .then((client_id) => {
-        return got(`${vkUrlAPI}.getCampaigns?v=5.71&access_token=${access_token}&account_id=${account_id}&client_id=${client_id}&include_deleted=0&campaign_ids=null`, vkOpts);
+        return got(`${vkUrlAPI}.getCampaigns?v=${vkVerAPI}&access_token=${access_token}&account_id=${account_id}&client_id=${client_id}&include_deleted=0&campaign_ids=null`, vkOpts);
     })
     .then((response) => {
         if (response.body.error) {
-            console.log('getCampaigns', response.body.error);
+            log.error(new Error(response.body.error), 'getCampaigns');
             process.exit(1);
         }
         return response.body.response;
     }, (err) => {
-        console.error('getCampaigns', err);
+        log.error(new Error(err), 'getCampaigns');
         process.exit(1);
     })
     .then((campaigns) => {
@@ -56,7 +57,7 @@ got(`${vkUrlAPI}.getClients?v=5.71&access_token=${access_token}&account_id=${acc
         }
 
         return Promise.all([
-            got(`${vkUrlAPI}.getStatistics?v=5.71&access_token=${access_token}&account_id=${account_id}&ids_type=campaign&ids=${ids}&period=day&date_from=${date_from}&date_to=${date_to}`, vkOpts),
+            got(`${vkUrlAPI}.getStatistics?v=${vkVerAPI}&access_token=${access_token}&account_id=${account_id}&ids_type=campaign&ids=${ids}&period=day&date_from=${date_from}&date_to=${date_to}`, vkOpts),
             Promise.resolve(campaignNames)
         ]);
     })
@@ -64,7 +65,7 @@ got(`${vkUrlAPI}.getClients?v=5.71&access_token=${access_token}&account_id=${acc
         let data = [];
 
         if (response.body.error) {
-            console.log('getStatistics', response.body.error);
+            log.error(new Error(response.body.error), 'getStatistics');
             process.exit(1);
         }
 
@@ -89,7 +90,7 @@ got(`${vkUrlAPI}.getClients?v=5.71&access_token=${access_token}&account_id=${acc
 
         return Promise.resolve(data);
     }, (err) => {
-        console.error('getStatistics', err);
+        log.error(new Error(err), 'getStatistics');
         process.exit(1);
     })
     .then((data) => {
