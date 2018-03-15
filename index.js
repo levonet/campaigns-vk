@@ -1,6 +1,7 @@
 const fs = require('fs');
 const got = require('got');
 const agent = require('https-proxy-agent');
+const log = require('./lib/logger');
 const storage = require('./lib/storage');
 
 const proxy_server = process.env.PROXY_SERVER;
@@ -24,12 +25,12 @@ if (proxy_server) {
 got(`${vkUrlAPI}.getClients?v=${vkVerAPI}&access_token=${access_token}&account_id=${account_id}`, vkOpts)
     .then((response) => {
         if (response.body.error) {
-            log.error(new Error(response.body.error), 'getClients');
+            log.error(new Error(response.body.error.error_msg), 'getClients');
             process.exit(1);
         }
         return response.body.response[0].id;
     }, (err) => {
-        log.error(new Error(err), 'getClients');
+        log.error(err, 'getClients');
         process.exit(1);
     })
     .then((client_id) => {
@@ -37,12 +38,12 @@ got(`${vkUrlAPI}.getClients?v=${vkVerAPI}&access_token=${access_token}&account_i
     })
     .then((response) => {
         if (response.body.error) {
-            log.error(new Error(response.body.error), 'getCampaigns');
+            log.error(new Error(response.body.error.error_msg), 'getCampaigns');
             process.exit(1);
         }
         return response.body.response;
     }, (err) => {
-        log.error(new Error(err), 'getCampaigns');
+        log.error(err, 'getCampaigns');
         process.exit(1);
     })
     .then((campaigns) => {
@@ -65,7 +66,7 @@ got(`${vkUrlAPI}.getClients?v=${vkVerAPI}&access_token=${access_token}&account_i
         let data = [];
 
         if (response.body.error) {
-            log.error(new Error(response.body.error), 'getStatistics');
+            log.error(new Error(response.body.error.error_msg), 'getStatistics');
             process.exit(1);
         }
 
@@ -88,9 +89,14 @@ got(`${vkUrlAPI}.getClients?v=${vkVerAPI}&access_token=${access_token}&account_i
             };
         };
 
+        if (!data.length) {
+            log.info('Nothing to save.');
+            process.exit(255);
+        }
+
         return Promise.resolve(data);
     }, (err) => {
-        log.error(new Error(err), 'getStatistics');
+        log.error(err, 'getStatistics');
         process.exit(1);
     })
     .then((data) => {
